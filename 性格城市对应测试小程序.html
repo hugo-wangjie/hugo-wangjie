@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>MBTI城市匹配测试（26题版）</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f7f7f7;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .container {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            padding: 24px 20px;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        h1, h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .desc {
+            color: #666;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 16px 0;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:active {
+            background: #e05a5a;
+        }
+        .btn.secondary {
+            background: #ddd;
+            color: #333;
+        }
+        .question {
+            margin-bottom: 24px;
+        }
+        .question-text {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .option {
+            background: #f0f0f0;
+            border-radius: 30px;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: 2px solid transparent;
+            transition: all 0.1s;
+            cursor: pointer;
+        }
+        .option.selected {
+            border-color: #ff6b6b;
+            background: #fff0f0;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+        .nav-buttons .btn {
+            flex: 1;
+            margin-top: 0;
+            padding: 12px 0;
+            font-size: 16px;
+        }
+        .result-city {
+            font-size: 28px;
+            font-weight: 700;
+            text-align: center;
+            margin: 20px 0 8px;
+            color: #333;
+        }
+        .result-mbti {
+            text-align: center;
+            color: #ff6b6b;
+            font-size: 18px;
+            margin-bottom: 16px;
+        }
+        .result-image {
+            width: 100%;
+            height: 200px;
+            background: #eee;
+            border-radius: 16px;
+            margin: 16px 0;
+            background-size: cover;
+            background-position: center;
+        }
+        .result-desc {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 16px;
+            line-height: 1.7;
+            color: #444;
+            font-size: 15px;
+            margin: 16px 0;
+        }
+        .result-tip {
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 首页 -->
+        <div id="page-home" class="page active">
+            <h1>✨ MBTI城市匹配测试</h1>
+            <div class="desc">26道题测出你的性格，找到最适合你的旅行城市</div>
+            <div style="text-align: center; margin: 30px 0;">
+                <span style="font-size: 60px;">🗺️</span>
+            </div>
+            <button class="btn" onclick="startTest()">开始测试</button>
+        </div>
+
+        <!-- 测试页 -->
+        <div id="page-test" class="page">
+            <h2 id="question-number">第 1 / 26 题</h2>
+            <div id="question-container" class="question">
+                <!-- 动态生成题目 -->
+            </div>
+            <div class="nav-buttons">
+                <button class="btn secondary" id="prevBtn" onclick="prevQuestion()" style="display: none;">上一题</button>
+                <button class="btn" id="nextBtn" onclick="nextQuestion()">下一题</button>
+            </div>
+        </div>
+
+        <!-- 结果页 -->
+        <div id="page-result" class="page">
+            <div id="result-city" class="result-city">成都</div>
+            <div id="result-mbti" class="result-mbti">ENFP 竞选者</div>
+            <div id="result-image" class="result-image"></div>
+            <div id="result-desc" class="result-desc">
+                成都，来了就不想走的“天府之国”。火锅的热辣、茶馆的悠闲、玉林的文艺，完美诠释巴适生活。ENFP的活力与创造力，在这座包容之城肆意生长。
+            </div>
+            <div class="result-tip">✨ 测测你的朋友会匹配哪个城市？</div>
+            <button class="btn" onclick="restartTest()">再测一次</button>
+        </div>
+    </div>
+
+    <script>
+        // 题库数据（26题，根据文档整理）
+        const questions = [
+            { text: "当你要外出一整天，你会", A: "计划你要做什么和在什么时候做", B: "说去就去", dim: ['J','P'] },
+            { text: "你认为自己是一个", A: "较为随兴所至的人", B: "较为有条理的人", dim: ['P','J'] },
+            { text: "假如你是一位老师，你会选教", A: "以事实为主的课程", B: "涉及理论的课程", dim: ['S','N'] },
+            { text: "你通常", A: "与人容易混熟", B: "比较沉静或矜持", dim: ['E','I'] },
+            { text: "一般来说，你和哪些人比较合得来？", A: "富于想象力的人", B: "现实的人", dim: ['N','S'] },
+            { text: "你是否经常让", A: "你的情感支配你的理智", B: "你的理智主宰你的情感", dim: ['F','T'] },
+            { text: "处理许多事情上，你会喜欢", A: "凭兴所至行事", B: "按照计划行事", dim: ['P','J'] },
+            { text: "你是否", A: "容易让人了解", B: "难于让人了解", dim: ['E','I'] },
+            { text: "按照程序表做事，", A: "合你心意", B: "令你感到束缚", dim: ['J','P'] },
+            { text: "当你有一份特别的任务，你会喜欢", A: "开始前小心组织计划", B: "边做边找须做什么", dim: ['J','P'] },
+            { text: "在大多数情况下，你会选择", A: "顺其自然", B: "按程序表做事", dim: ['P','J'] },
+            { text: "大多数人会说你是一个", A: "重视自我隐私的人", B: "非常坦率开放的人", dim: ['I','E'] },
+            { text: "你宁愿被人认为是一个", A: "实事求是的人", B: "机灵的人", dim: ['S','N'] },
+            { text: "在一大群人当中，通常是", A: "你介绍大家认识", B: "别人介绍你", dim: ['E','I'] },
+            { text: "你会跟哪些人做朋友？", A: "常提出新注意的", B: "脚踏实地的", dim: ['N','S'] },
+            { text: "你倾向", A: "重视感情多于逻辑", B: "重视逻辑多于感情", dim: ['F','T'] },
+            { text: "你比较喜欢", A: "坐观事情发展才作计划", B: "很早就作计划", dim: ['P','J'] },
+            { text: "你喜欢花很多的时间", A: "一个人独处", B: "合别人在一起", dim: ['I','E'] },
+            { text: "与很多人一起会", A: "令你活力培增", B: "常常令你心力憔悴", dim: ['E','I'] },
+            { text: "你比较喜欢", A: "很早便把约会、社交聚集等事情安排妥当", B: "无拘无束，看当时有什么好玩就做什么", dim: ['J','P'] },
+            { text: "计划一个旅程时，你较喜欢", A: "大部分的时间都是跟当天的感觉行事", B: "事先知道大部分的日子会做什么", dim: ['P','J'] },
+            { text: "在社交聚会中，你", A: "有时感到郁闷", B: "常常乐在其中", dim: ['I','E'] },
+            { text: "你通常", A: "和别人容易混熟", B: "趋向自处一隅", dim: ['E','I'] },
+            { text: "哪些人会更吸引你？", A: "一个思想敏捷及非常聪颖的人", B: "实事求是，具丰富常识的人", dim: ['N','S'] },
+            { text: "在日常工作中，你会", A: "颇为喜欢处理迫使你分秒必争的突发", B: "通常预先计划，以免要在压力下工作", dim: ['P','J'] },
+            { text: "你认为别人一般", A: "要花很长时间才认识你", B: "用很短的时间便认识你", dim: ['I','E'] }
+        ];
+
+        // 结果数据：MBTI → 城市、描述、图片（请将图片URL替换为真实的高清城市风景图）
+const cityMatch = {
+    "INTJ": { 
+        city: "北京", 
+        desc: "北京，中国的政治文化中心，一座兼具历史厚重感与现代战略眼光的城市。故宫的红墙黄瓦、胡同的烟火气，与国贸的玻璃幕墙在此交汇。适合INTJ在理性与深邃中探索无限可能。",
+        image: "https://images.unsplash.com/photo-1584872589930-e99fe5bf4408?q=80&w=1177&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "INTP": { 
+        city: "南京", 
+        desc: "南京，六朝古都，文教昌盛。紫金山下，玄武湖畔，处处是思考的空间。这里既有南大的学术氛围，也有先锋书店的文艺气质，让INTP在静谧中构建自己的逻辑宇宙。",
+        image: "https://images.unsplash.com/photo-1608630520765-a0cf306b8fc6?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ENTJ": { 
+        city: "上海", 
+        desc: "上海，摩天大楼与百年洋楼共舞的国际都会。外滩的灯火、陆家嘴的繁忙，诉说着这座城市的进取心。ENTJ在此能感受到运筹帷幄的掌控力，每一步都指向更大的格局。",
+        image: "https://images.unsplash.com/photo-1538428494232-9c0d8a3ab403?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ENTP": { 
+        city: "深圳", 
+        desc: "深圳，中国最年轻的大都市，从渔村到创新之都的传奇。科技园里的头脑风暴、南山的创业咖啡，处处是灵感的火花。ENTP在这里总能找到下一个值得辩论的新风口。",
+        image: "https://images.unsplash.com/photo-1636821771168-d13e578a88ba?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "INFJ": { 
+        city: "拉萨", 
+        desc: "拉萨，离天堂最近的日光之城。布达拉宫的庄严、八廓街的转经声，让灵魂瞬间沉静。INFJ在这里能找到内心的回声，感受超越世俗的深邃与慈悲。",
+        image: "https://ts1.tc.mm.bing.net/th/id/R-C.a874bea09df7a83ea3bbd7fa88db6b5e?rik=BRCHOWxddTcUTw&riu=http%3a%2f%2fwww.lasa.gov.cn%2flasa%2fsybg%2f201909%2fc6c621e59ea14af69090b6aaa9f6b6bc%2fimages%2f5ecb779a68ba4dea978122034ff52410.jpg&ehk=FCbt6Jv9nJqD8NoOlOuNC8WFQtQiDNXK30lv2HVcLfI%3d&risl=&pid=ImgRaw&r=0"
+    },
+    "INFP": { 
+        city: "大理", 
+        desc: "大理，苍山洱海间的乌托邦。稻田里的咖啡馆、古城的手作店，生活像诗一样慢下来。INFP的理想主义在这里有了具象的归宿，每一缕风都带着自由的气息。",
+        image: "https://ts1.tc.mm.bing.net/th/id/R-C.01bb586716b5fa75d2c6968a31a6bf10?rik=1tPxTTwQLDfXTg&riu=http%3a%2f%2fy1.ifengimg.com%2f1b28778edc63062f%2f2012%2f0613%2frdn_4fd80424b87cb.jpg&ehk=7lglXO4IEOREoc4bVmJb0bZSD6h4s00ddO3rSEKBHBE%3d&risl=&pid=ImgRaw&r=0"
+    },
+    "ENFJ": { 
+        city: "杭州", 
+        desc: "杭州，西湖烟雨与钱江潮涌并存的人间天堂。浙大的书卷气、阿里巴巴的创新力，与龙井茶香交织。ENFJ既能在此温润他人，也能引领时代浪潮。",
+        image: "https://images.unsplash.com/photo-1725879642445-854e1dd30185?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ENFP": { 
+        city: "成都", 
+        desc: "成都，来了就不想走的“天府之国”。火锅的热辣、茶馆的悠闲、玉林的文艺，完美诠释巴适生活。ENFP的活力与创造力，在这座包容之城肆意生长。",
+        image: "https://ts1.tc.mm.bing.net/th/id/R-C.cd292625b83f5b53b36b73ef78a48399?rik=Jt%2bJ2RHt36Tkzw&riu=http%3a%2f%2fdimg03.c-ctrip.com%2fimages%2ffd%2ftg%2fg3%2fM09%2f0D%2f3E%2fCggYG1bKpTqAc9BPAATcGZ2Yzo8708.jpg&ehk=J8mz23L5sGCTK2Hz6zPyPC%2fGVhCnJlwTctEcoZyJN3M%3d&risl=&pid=ImgRaw&r=0"
+    },
+    "ISTJ": { 
+        city: "西安", 
+        desc: "西安，十三朝古都，规矩与秩序刻进城墙的每一块青砖。兵马俑的严整、钟楼的晨暮钟鼓，让ISTJ感受到规则之美，踏实而心安。",
+        image: "https://images.unsplash.com/photo-1635834671319-b856e413352c?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ISFJ": { 
+        city: "苏州", 
+        desc: "苏州，小桥流水，园林如画。平江路的评弹、山塘街的灯火，守护着江南最温柔的日常。ISFJ的关怀与细致，与这座城的温婉气质如出一辙。",
+        image: "https://images.unsplash.com/photo-1686294464747-25a591ed0336?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ESTJ": { 
+        city: "广州", 
+        desc: "广州，千年商都，务实又充满烟火气。早茶的“一盅两件”、批发市场的忙碌，处处是效率与传统的平衡。ESTJ在这里如鱼得水，将秩序融入生活。",
+        image: "https://nfassetoss.southcn.com/__asset/0bdf1f0b31/ad59790e0b.jpeg"
+    },
+    "ESFJ": { 
+        city: "长沙", 
+        desc: "长沙，娱乐之都，幸福感爆棚。五一广场的人潮、解放西的夜生活、茶颜悦色的清香，处处是热闹的烟火气。ESFJ的热情好客，与这座城的快乐基因完美共鸣。",
+        image: "https://ts1.tc.mm.bing.net/th/id/R-C.edfe4d9f80589406b94e3161177aee7c?rik=HZ40zS5DCeGpuw&riu=http%3a%2f%2fuploadfile.yunnangateway.com%2fs2%2f2020%2f0714%2f20200714044501581.jpg&ehk=zPNiLo44ySv9HQH5l6ymg85SECKtllhTUob%2fOmX8wTo%3d&risl=&pid=ImgRaw&r=0"
+    },
+    "ISTP": { 
+        city: "重庆", 
+        desc: "重庆，8D魔幻山城，轻轨穿楼、立交桥盘旋。洪崖洞的夜景、防空洞里的火锅，考验着每一个探索者的方向感。ISTP的冷静与技巧，恰能玩转这座立体迷宫。",
+        image: "https://ts1.tc.mm.bing.net/th/id/R-C.0095528b3d0ba787e3073a3114b75c1a?rik=0IIWyNJag7623Q&riu=http%3a%2f%2fwww.cqzyx.net%2fu%2fcms%2fzyx%2f201811%2f15103928wq7a.jpg&ehk=%2f%2f0QWbzzcE%2bAL%2buvuxccuCE039T1O7rh74YQWVs%2bk0g%3d&risl=&pid=ImgRaw&r=0"
+    },
+    "ISFP": { 
+        city: "厦门", 
+        desc: "厦门，海上花园，文艺且浪漫。环岛路的骑行、鼓浪屿的老洋房、沙坡尾的潮店，处处是色彩与灵感的碰撞。ISFP的感官世界，在这里被温柔唤醒。",
+        image: "https://img.shetu66.com/2022/11/30/1669822240188542.jpg"
+    },
+    "ESTP": { 
+        city: "香港", 
+        desc: "香港，东方之珠，永不眠的冒险乐园。维港的霓虹、中环的摩天楼、茶餐厅的市井，快节奏里藏着无限商机。ESTP的敏锐与魄力，总能在此抓住下一个风口。",
+        image: "https://images.unsplash.com/photo-1502099530544-2b61cbaed85c?q=80&w=1168&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+    },
+    "ESFP": { 
+        city: "三亚", 
+        desc: "三亚，热带天堂，阳光沙滩的度假胜地。亚龙湾的碧波、后海村的冲浪、椰梦长廊的日落，让人只想尽情释放。ESFP的快乐哲学，在这里每分每秒都在上演。",
+        image: "https://tr-osdcp.qunarzz.com/tr-osd-tr-manager/img/a978f5349b67249b04e5a98aea9cf28d.jpg"
+    }
+};
+
+        // 当前题目索引
+        let currentQuestionIndex = 0;
+        // 存储用户答案：每个维度计数
+        let scores = {
+            E: 0, I: 0,
+            S: 0, N: 0,
+            T: 0, F: 0,
+            J: 0, P: 0
+        };
+        // 记录每道题选的选项 (用于显示选中状态)
+        let selectedOptions = new Array(questions.length).fill(null);
+
+        function startTest() {
+            document.getElementById('page-home').classList.remove('active');
+            document.getElementById('page-test').classList.add('active');
+            currentQuestionIndex = 0;
+            // 重置数据
+            scores = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+            selectedOptions.fill(null);
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('question-number').innerText = `第 ${currentQuestionIndex+1} / ${questions.length} 题`;
+            const container = document.getElementById('question-container');
+            container.innerHTML = `
+                <div class="question-text">${q.text}</div>
+                <div class="options">
+                    <div class="option ${selectedOptions[currentQuestionIndex] === 'A' ? 'selected' : ''}" onclick="selectOption('A')">${q.A}</div>
+                    <div class="option ${selectedOptions[currentQuestionIndex] === 'B' ? 'selected' : ''}" onclick="selectOption('B')">${q.B}</div>
+                </div>
+            `;
+            // 控制上一题按钮显示
+            document.getElementById('prevBtn').style.display = currentQuestionIndex === 0 ? 'none' : 'block';
+            // 下一题按钮文本
+            const nextBtn = document.getElementById('nextBtn');
+            nextBtn.innerText = currentQuestionIndex === questions.length-1 ? '查看结果' : '下一题';
+        }
+
+        function selectOption(opt) {
+            // 如果已经选过相同选项，则取消选择
+            if (selectedOptions[currentQuestionIndex] === opt) {
+                // 取消选中
+                selectedOptions[currentQuestionIndex] = null;
+                // 从分数中扣除
+                const dim = questions[currentQuestionIndex].dim;
+                if (opt === 'A') {
+                    scores[dim[0]]--;
+                } else {
+                    scores[dim[1]]--;
+                }
+            } else {
+                // 如果有旧选项，先减去旧分数
+                if (selectedOptions[currentQuestionIndex] !== null) {
+                    const oldOpt = selectedOptions[currentQuestionIndex];
+                    const oldDim = questions[currentQuestionIndex].dim;
+                    if (oldOpt === 'A') {
+                        scores[oldDim[0]]--;
+                    } else {
+                        scores[oldDim[1]]--;
+                    }
+                }
+                // 设置新选项，增加分数
+                selectedOptions[currentQuestionIndex] = opt;
+                const dim = questions[currentQuestionIndex].dim;
+                if (opt === 'A') {
+                    scores[dim[0]]++;
+                } else {
+                    scores[dim[1]]++;
+                }
+            }
+            // 重新渲染以更新选中样式
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            // 如果当前题没选，也能继续（不强制）
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                renderQuestion();
+            } else {
+                // 计算最终结果
+                calculateResult();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                renderQuestion();
+            }
+        }
+
+        function calculateResult() {
+            // 计算四个维度
+            const ei = scores.E >= scores.I ? 'E' : 'I';
+            const sn = scores.S >= scores.N ? 'S' : 'N';
+            const tf = scores.T >= scores.F ? 'T' : 'F';
+            const jp = scores.J >= scores.P ? 'J' : 'P';
+            const mbti = ei + sn + tf + jp;
+
+            // 查找匹配城市
+            const match = cityMatch[mbti] || { city: "未知", desc: "无法匹配，请重试。", image: "" };
+            document.getElementById('result-city').innerText = match.city;
+            document.getElementById('result-mbti').innerText = mbti + ' ' + getMbtiName(mbti);
+            document.getElementById('result-desc').innerText = match.desc;
+            // 设置城市图片，如果没有图片则显示占位灰色背景
+            if (match.image) {
+                document.getElementById('result-image').style.backgroundImage = "url('" + match.image + "')";
+            } else {
+                document.getElementById('result-image').style.backgroundImage = "url('https://via.placeholder.com/400x200?text=City+Image')";
+            }
+
+            // 切换到结果页
+            document.getElementById('page-test').classList.remove('active');
+            document.getElementById('page-result').classList.add('active');
+        }
+
+        function getMbtiName(mbti) {
+            const names = {
+                "INTJ":"建筑师","INTP":"逻辑学家","ENTJ":"指挥官","ENTP":"辩论家",
+                "INFJ":"提倡者","INFP":"调停者","ENFJ":"主人公","ENFP":"竞选者",
+                "ISTJ":"物流师","ISFJ":"守卫者","ESTJ":"总经理","ESFJ":"执政官",
+                "ISTP":"鉴赏家","ISFP":"探险家","ESTP":"企业家","ESFP":"表演者"
+            };
+            return names[mbti] || "";
+        }
+
+        function restartTest() {
+            document.getElementById('page-result').classList.remove('active');
+            document.getElementById('page-home').classList.add('active');
+        }
+    </script>
+</body>
+</html>
